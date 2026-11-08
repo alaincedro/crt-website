@@ -1,0 +1,48 @@
+Connect the dashboard Inbox to Zoho Mail (once, about 10 minutes)
+==================================================================
+
+The Inbox tab reads hello@crt.rw / alain@crt.rw through a small server
+function in Supabase ("inbox"). It needs a read-only key from Zoho.
+Keys are secrets: you create and paste them yourself, and they stay in
+Supabase. They are never put in the website files.
+
+1. Create a Zoho API client
+   - Go to https://api-console.zoho.com and sign in as alain@crt.rw.
+   - Click "Add Client" → "Self Client" → Create → OK.
+   - Copy the Client ID and Client Secret into your password manager.
+
+2. Generate a one-time code (still in the Self Client)
+   - Open the "Generate Code" tab.
+   - Scope (copy exactly):
+       ZohoMail.accounts.READ,ZohoMail.folders.READ,ZohoMail.messages.READ
+   - Time duration: 10 minutes. Description: CRT dashboard inbox.
+   - Click Create, choose the crt.rw portal if asked, and copy the code.
+
+3. Turn the code into a refresh token (in your Mac's Terminal app)
+   Replace the three CAPITAL parts and run:
+
+     curl -s -X POST "https://accounts.zoho.com/oauth/v2/token" \
+       -d grant_type=authorization_code \
+       -d client_id=CLIENT_ID -d client_secret=CLIENT_SECRET -d code=CODE
+
+   Copy the "refresh_token" value from the reply into your password manager.
+   (If it says invalid_code, the 10 minutes ran out: repeat step 2.)
+
+4. Save the three secrets in Supabase
+   Supabase → project crt-website → Edge Functions → Secrets → add:
+     ZOHO_CLIENT_ID      = your Client ID
+     ZOHO_CLIENT_SECRET  = your Client Secret
+     ZOHO_REFRESH_TOKEN  = your refresh token
+   Click Save.
+
+5. Open the dashboard → Inbox → Refresh.
+
+If the Inbox says "Zoho Mail API 4xx": the free Zoho plan may not allow
+API access. Upgrading crt.rw to Zoho Mail Lite enables it.
+
+Security: only signed-in team members can call the function; it can only
+READ mail (no sending or deleting). Emails open in a locked-down frame
+where scripts can't run. To revoke access at any time, delete the Self
+Client in api-console.zoho.com.
+
+The function's code is in admin/supabase-functions/inbox/index.ts.

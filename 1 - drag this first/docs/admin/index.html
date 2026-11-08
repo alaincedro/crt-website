@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>CRT Admin</title>
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@600;700;800&display=swap">
+<link rel="stylesheet" href="admin.css">
+</head>
+<body>
+<div id="demo-banner" class="demo-banner" hidden>Demo mode: sample data, nothing is saved. To go live, follow <code>admin/SETUP.txt</code>.</div>
+
+<!-- Login -->
+<section id="view-login" class="login" hidden>
+  <div class="login-card">
+    <img src="../assets/crt-logo.svg" alt="CRT Media Agency" class="login-logo" width="821" height="194" decoding="async">
+    <h1>Team dashboard</h1>
+    <p class="muted">Sign in with your work email and password.</p>
+    <form id="login-form">
+      <label for="login-email">Email</label>
+      <input id="login-email" type="email" required autocomplete="username" placeholder="you@crt.rw">
+      <label for="login-password">Password</label>
+      <input id="login-password" type="password" required autocomplete="current-password" minlength="6">
+      <button class="btn" type="submit">Sign in</button>
+    </form>
+    <p class="muted small">Forgot your password? Ask an admin to set a new one in Supabase.</p>
+    <p id="login-msg" class="login-msg" role="status"></p>
+  </div>
+</section>
+
+<!-- No access -->
+<section id="view-noaccess" class="login" hidden>
+  <div class="login-card">
+    <img src="../assets/crt-logo.svg" alt="CRT Media Agency" class="login-logo" width="821" height="194" decoding="async">
+    <h1>No access yet</h1>
+    <p class="muted">You're signed in as <strong id="noaccess-email"></strong>, but you're not on the team list. Ask an admin to add you.</p>
+    <button class="btn secondary" data-action="signout">Sign out</button>
+  </div>
+</section>
+
+<!-- App -->
+<div id="view-app" hidden>
+  <header class="topbar">
+    <a href="index.html" class="brand"><img src="../assets/crt-logo.svg" alt="CRT Media Agency" width="821" height="194" decoding="async"><span>Admin</span></a>
+    <nav class="tabs" aria-label="Dashboard sections">
+      <button class="tab is-active" data-tab="leads">Leads</button>
+      <button class="tab" data-tab="inbox">Inbox <em class="tab-count" id="inbox-count" hidden></em></button>
+      <button class="tab" data-tab="content">Content</button>
+      <button class="tab" data-tab="cases">Case studies</button>
+      <button class="tab" data-tab="team">Team</button>
+    </nav>
+    <div class="me"><span id="me-name"></span><button class="link" data-action="signout">Sign out</button></div>
+  </header>
+
+  <main class="wrap">
+    <!-- LEADS -->
+    <section id="tab-leads" class="tab-panel">
+      <div class="page-head">
+        <div><h1>Leads</h1><p class="muted" id="leads-sub">Every enquiry from the website.</p></div>
+        <div class="head-actions"><button class="btn small" data-action="new-lead">+ Add lead</button><button class="btn secondary small" data-action="refresh">Refresh</button><button class="btn secondary small" data-action="export">Export CSV</button><a class="btn small" href="../index.html" target="_blank" rel="noopener">View site →</a></div>
+      </div>
+      <div class="kpis" id="kpis"></div>
+      <div class="insights">
+        <div class="panel"><h2>Where leads come from</h2><div id="by-source" class="bars"></div></div>
+        <div class="panel"><h2>What they ask for</h2><div id="by-service" class="bars"></div></div>
+      </div>
+      <div class="filters">
+        <div class="pills" id="status-pills" role="tablist" aria-label="Filter by status"></div>
+        <input id="search" type="search" placeholder="Search name, contact, service…" aria-label="Search leads">
+      </div>
+      <div class="panel flush">
+        <table class="leads-table" id="leads-table">
+          <thead><tr><th>Received</th><th>Name</th><th>Service / offer</th><th>Date wanted</th><th>Source</th><th class="num">Value (RWF)</th><th>Status</th></tr></thead>
+          <tbody></tbody>
+        </table>
+        <div class="empty" id="leads-empty" hidden>No leads match this filter.</div>
+      </div>
+    </section>
+
+    <!-- INBOX -->
+    <section id="tab-inbox" class="tab-panel" hidden>
+      <div class="page-head">
+        <div><h1>Inbox</h1><p class="muted" id="inbox-sub">Email sent to hello@crt.rw and alain@crt.rw.</p></div>
+        <div class="head-actions"><button class="btn secondary small" data-action="inbox-refresh">Refresh</button><a class="btn small" href="https://mail.zoho.com/zm/" target="_blank" rel="noopener">Open Zoho Mail ↗</a></div>
+      </div>
+      <div class="panel" id="inbox-setup" hidden>
+        <h2>Connect the mailbox</h2>
+        <p class="muted small" id="inbox-setup-msg">The inbox isn't connected yet. Follow <code>admin/INBOX-SETUP.txt</code> to connect Zoho Mail (about 10 minutes, once).</p>
+      </div>
+      <div class="inbox" id="inbox-wrap">
+        <div class="panel flush inbox-list"><ul id="inbox-list"></ul><div class="empty" id="inbox-empty" hidden>No emails yet.</div><button class="link" id="inbox-more" data-action="inbox-more" hidden>Load older emails</button></div>
+        <div class="panel inbox-reader" id="inbox-reader">
+          <p class="muted small">Choose an email to read it here.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- CONTENT -->
+    <section id="tab-content" class="tab-panel" hidden>
+      <div class="page-head">
+        <div><h1>Website content</h1><p class="muted">Changes appear on the live site the next time a page loads.</p></div>
+      </div>
+      <p class="notice" id="content-readonly" hidden>Only admins can change content. You can view it here.</p>
+      <div class="panel">
+        <h2>Prices</h2>
+        <p class="muted small">Starting prices shown across the site. Early-booking prices are 10% off automatically.</p>
+        <form id="prices-form" class="price-grid"></form>
+        <div class="row-end"><button class="btn" data-action="save-prices">Save prices</button></div>
+      </div>
+      <div class="panel">
+        <h2>Wedding packages</h2>
+        <p class="muted small">What's included in each package. One item per line. The home page shows the first three.</p>
+        <form id="packages-form" class="pkg-grid"></form>
+        <div class="row-end"><button class="btn" data-action="save-packages">Save packages</button></div>
+      </div>
+      <div class="panel">
+        <h2>Testimonials</h2>
+        <p class="muted small">Real words from real clients only. They appear on the home page as soon as you save at least one. Up to 6.</p>
+        <div id="testimonials-list"></div>
+        <div class="row-end"><button class="btn secondary small" data-action="add-testimonial">+ Add testimonial</button><button class="btn" data-action="save-testimonials">Save testimonials</button></div>
+        <details class="ask-review">
+          <summary>Message to ask a client for a testimonial</summary>
+          <p class="muted small">Copy this into WhatsApp. Add their reply above with their permission.</p>
+          <pre class="code" id="review-msg">Hi [name], thank you again for choosing CRT Media Agency for your [wedding / event / project]. It was a pleasure working with you!
+
+Could you share a few words about your experience with us? Two or three sentences is perfect. With your permission, we'd love to show it on our website (crt.rw) with your name.
+
+Thank you! 🙏
+Alain, CRT Media Agency</pre>
+          <button class="btn secondary small" data-action="copy-review-msg">Copy message</button>
+        </details>
+      </div>
+    </section>
+
+    <!-- CASE STUDIES -->
+    <section id="tab-cases" class="tab-panel" hidden>
+      <div class="page-head">
+        <div><h1>Case studies</h1><p class="muted">Add the highlight film and photos. Changes go live as soon as they save.</p></div>
+        <div class="head-actions"><select id="case-select" aria-label="Choose a case study"></select><a class="btn secondary small" id="case-preview" target="_blank" rel="noopener">Preview with placeholders ↗</a></div>
+      </div>
+      <p class="notice" id="cases-readonly" hidden>Only admins can change case studies. You can view them here.</p>
+      <div class="panel">
+        <h2>Highlight film</h2>
+        <p class="muted small">Best: paste a YouTube or Vimeo link (any length, loads fast). Or upload an MP4 up to 50 MB.</p>
+        <div class="film-row">
+          <input id="film-url" type="text" inputmode="url" placeholder="https://youtube.com/watch?v=…" aria-label="Film link">
+          <button class="btn small" data-action="save-film-url">Save link</button>
+          <label class="btn secondary small upload-btn">Upload video<input type="file" id="film-file" accept="video/mp4,video/webm,video/quicktime" hidden></label>
+          <button class="link danger" data-action="remove-film">Remove</button>
+        </div>
+        <div class="film-preview" id="film-preview"></div>
+      </div>
+      <div class="panel">
+        <h2>Photos</h2>
+        <p class="muted small">Up to 9 photos. They're resized automatically. The caption is read aloud to blind visitors and helps Google, so describe what's in the photo.</p>
+        <div class="slot-grid" id="photo-slots"></div>
+      </div>
+    </section>
+
+    <!-- TEAM -->
+    <section id="tab-team" class="tab-panel" hidden>
+      <div class="page-head"><div><h1>Team</h1><p class="muted">Admins can do everything. Staff can manage leads only.</p></div></div>
+      <div class="panel flush"><table class="team-table" id="team-table"><thead><tr><th>Name</th><th>Role</th><th></th></tr></thead><tbody></tbody></table></div>
+      <div class="panel">
+        <h2>Add a team member</h2>
+        <ol class="steps-list">
+          <li>In Supabase, open <strong>Authentication → Users → Add user → Create new user</strong>. Enter their email and a starting password, and tick <strong>Auto Confirm User</strong>.</li>
+          <li>In <strong>SQL Editor</strong>, run the lines below with their name and email (use <code>'admin'</code> instead of <code>'staff'</code> for full access):</li>
+        </ol>
+        <pre class="code" id="invite-sql">insert into public.team (user_id, name, role)
+select id, 'Their name', 'staff' from auth.users where email = 'their@email.com'
+on conflict (user_id) do nothing;</pre>
+        <p class="muted small">Give them the password privately. They sign in on this admin page (<code>admin/index.html</code> in the website folder). To reset a password later, open the user in <strong>Authentication → Users</strong>.</p>
+      </div>
+    </section>
+  </main>
+</div>
+
+<!-- Lead drawer -->
+<div class="drawer-scrim" id="drawer-scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-hidden="true" aria-label="Lead details">
+  <div class="drawer-head"><h2 id="d-name"></h2><button class="icon-btn" data-action="close-drawer" aria-label="Close">×</button></div>
+  <div class="drawer-body">
+    <div class="quick" id="d-quick"></div>
+    <dl class="facts" id="d-facts"></dl>
+    <div id="d-new" hidden>
+      <p class="muted small">For enquiries that came in on WhatsApp, by phone or in person.</p>
+      <div class="field"><label for="n-name">Name *</label><input id="n-name" maxlength="120" autocomplete="off"></div>
+      <div class="field"><label for="n-contact">WhatsApp, phone or email *</label><input id="n-contact" maxlength="160" autocomplete="off" placeholder="+250 7…"></div>
+      <div class="field"><label for="n-service">Service</label><select id="n-service"></select></div>
+      <div class="field"><label for="n-offer">Offer / package</label><input id="n-offer" maxlength="120" placeholder="e.g. Premium, Brand starter kit"></div>
+      <div class="field"><label for="n-date">Date wanted</label><input id="n-date" maxlength="120" placeholder="e.g. 14 Feb 2027"></div>
+      <div class="field"><label for="n-source">How they found us</label><select id="n-source"></select></div>
+      <div class="field"><label for="n-details">What they need</label><textarea id="n-details" rows="3" maxlength="2000"></textarea></div>
+    </div>
+    <div class="field"><label for="d-status">Status</label><select id="d-status"></select></div>
+    <div class="field"><label for="d-value">Value (RWF)</label><input id="d-value" type="number" min="0" step="1000" placeholder="e.g. 1500000"></div>
+    <div class="field"><label for="d-assigned">Handled by</label><select id="d-assigned"></select></div>
+    <div class="field"><label for="d-notes">Notes</label><textarea id="d-notes" rows="5" placeholder="Calls, quotes sent, next step…"></textarea></div>
+  </div>
+  <div class="drawer-foot"><button class="link danger" data-action="delete-lead" id="d-delete">Delete</button><button class="btn" data-action="save-lead">Save</button></div>
+</aside>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<script src="../crt-config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script src="admin.js"></script>
+
+</body>
+</html>

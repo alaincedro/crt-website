@@ -1,0 +1,59 @@
+CRT admin dashboard: setup
+==========================
+
+Open admin/index.html in a browser to use the dashboard. Until it is connected
+to Supabase it runs in demo mode with sample data, and nothing is saved.
+
+Connect it (about 15 minutes, free Supabase plan is enough):
+
+1. Create a project at supabase.com. Pick the region closest to Rwanda.
+
+2. Supabase -> SQL Editor -> New query. Paste everything in
+   admin/supabase-setup.sql and click Run. This creates the leads, team and
+   content tables, the access rules, and the photo/video storage.
+
+3. Create your own login:
+   Authentication -> Users -> Add user -> Create new user.
+   Enter your email and a password, tick "Auto Confirm User".
+
+4. Make yourself an admin: in the SQL Editor run (with your name and email):
+
+     insert into public.team (user_id, name, role)
+     select id, 'Alain Cedrick', 'admin' from auth.users where email = 'alain@crt.rw'
+     on conflict (user_id) do update set role = 'admin';
+
+5. Project Settings -> API. Copy the "Project URL" and the "anon public" key
+   into crt-config.js (in the main website folder):
+
+     window.CRT_CONFIG = {
+       SUPABASE_URL: 'https://xxxx.supabase.co',
+       SUPABASE_ANON_KEY: 'eyJ...'
+     };
+
+   The anon key is safe in the website: the access rules only let visitors
+   ADD enquiries and READ prices. Never paste the service_role key.
+
+6. Optional but recommended: Authentication -> Sign In / Providers -> Email,
+   turn OFF "Allow new users to sign up", so only people you add can log in.
+
+7. Open admin/index.html and sign in.
+
+What each part does
+-------------------
+Inbox         Email sent to hello@crt.rw / alain@crt.rw, read right in the
+              dashboard. Save any email as a lead. Setup: admin/INBOX-SETUP.txt
+Leads         Every website enquiry, plus any you add by hand (+ Add lead) for
+              WhatsApp, phone or walk-in enquiries. Track status, value, notes,
+              who handles it; reply on WhatsApp in one click; export to CSV.
+Content       Change prices and wedding package contents. The website shows the
+              new values the next time a page loads.
+Case studies  Add the highlight film (YouTube/Vimeo link or upload) and photos.
+Testimonials  (in Content) Paste real client quotes; they show on the home page.
+              A ready-made WhatsApp message to ask clients is included.
+Team          Change names and roles. Admins can do everything; staff manage leads.
+
+Notes
+-----
+- The website and dashboard need an internet connection to reach Supabase.
+- Website enquiries are saved to the dashboard AND open WhatsApp. If a visitor
+  closes WhatsApp without sending, the enquiry is still in the dashboard.
