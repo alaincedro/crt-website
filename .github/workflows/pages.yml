@@ -36,6 +36,17 @@ jobs:
           fi
           rm -rf _site/__MACOSX
           find _site -name '.DS_Store' -delete
+          # While holding/index.html exists, crt.rw shows the "coming soon" page and the
+          # full site lives at crt.rw/preview/ (hidden from search engines).
+          # To launch the full site, delete the holding folder on GitHub.
+          if [ -f holding/index.html ]; then
+            mv _site _preview && mkdir _site
+            cp -R holding/. _site/
+            mv _preview _site/preview
+            rm -f _site/preview/CNAME
+            find _site/preview -name '*.html' -exec sed -i 's#<head>#<head><meta name="robots" content="noindex,nofollow">#' {} +
+            printf 'User-agent: *\nAllow: /\nDisallow: /preview/\n' > _site/robots.txt
+          fi
           touch _site/.nojekyll
           test -f _site/index.html
 
